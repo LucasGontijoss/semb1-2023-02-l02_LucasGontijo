@@ -109,7 +109,9 @@
 #define BUTTON_PIN 0 // Pino do botão é PA0
 
 int32_t button_status;
-
+int32_t button_status = 1;
+int32_t led_status = 0;
+ 
 int main(int argc, char *argv[])
 {
   uint32_t i;
@@ -154,19 +156,24 @@ int main(int argc, char *argv[])
 
   while(1)
     {
-
       button_status = *pGPIOA_IDR & (1U << BUTTON_PIN); // Leitura do estado do botão
 
-      if(button_status == 0) // Se o botão estiver pressionado (assumindo ativo em nível baixo)
+      // Verifica se o botão foi pressionado
+      if(button_status == 0 && last_button_status == 1) 
       {
-        *pGPIOC_BSRR = GPIO_BSRR13_SET; // Acende o LED
-        led_status = 0;
+        led_status = !led_status; // Inverte o estado do LED
+
+        if(led_status == 0) 
+        {
+          *pGPIOC_BSRR = GPIO_BSRR13_SET; // Acende o LED
+        }
+        else 
+        {
+          *pGPIOC_BSRR = GPIO_BSRR13_RESET; // Apaga o LED
+        }
       }
-      else // Se o botão estiver solto
-      {
-        *pGPIOA_BSRRC = GPIO_BSRR13_RESET; // Apaga o LED
-        led_status = 1;
-      }
+
+      last_button_status = button_status; // Atualiza o estado anterior do botão
 
       for (uint32_t i = 0; i < LED_DELAY; i++);
 
