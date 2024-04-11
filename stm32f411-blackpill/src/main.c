@@ -106,6 +106,10 @@
  * Public Functions
  ****************************************************************************/
 
+#define BUTTON_PIN 0 // Pino do botão é PA0
+
+int32_t button_status;
+
 int main(int argc, char *argv[])
 {
   uint32_t i;
@@ -142,17 +146,30 @@ int main(int argc, char *argv[])
   reg |= (GPIO_PUPDR_NONE << GPIO_PUPDR_SHIFT(13));
   *pGPIOC_PUPDR = reg;
 
+/* Configura PA0 como entrada */
+  reg = *pGPIOA_MODER;
+  reg &= ~GPIO_MODER_MASK(0);
+  reg |= (GPIO_MODER_INPUT << GPIO_MODER_SHIFT(0));
+  *pGPIOA_MODER = reg;
+
   while(1)
     {
-      /* Liga LED */
 
-      *pGPIOC_BSRR = GPIO_BSRR_RESET(13);
-      for (i = 0; i < LED_DELAY; i++);
+      button_status = *pGPIOA_IDR & (1U << BUTTON_PIN); // Leitura do estado do botão
 
-      /* Desliga LED */
+      if(button_status == 0) // Se o botão estiver pressionado (assumindo ativo em nível baixo)
+      {
+        *pGPIOC_BSRR = GPIO_BSRR13_SET; // Acende o LED
+        led_status = 0;
+      }
+      else // Se o botão estiver solto
+      {
+        *pGPIOA_BSRRC = GPIO_BSRR13_RESET; // Apaga o LED
+        led_status = 1;
+      }
 
-      *pGPIOC_BSRR = GPIO_BSRR_SET(13);
-      for (i = 0; i < LED_DELAY; i++);
+      for (uint32_t i = 0; i < LED_DELAY; i++);
+
     }
 
   /* Nunca deveria chegar aqui */
